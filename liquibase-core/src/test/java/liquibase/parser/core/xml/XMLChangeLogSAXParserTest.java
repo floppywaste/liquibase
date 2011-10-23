@@ -1,9 +1,11 @@
 package liquibase.parser.core.xml;
 
 import liquibase.change.Change;
+import liquibase.change.ColumnConfig;
 import liquibase.change.core.AddColumnChange;
 import liquibase.change.core.CreateTableChange;
 import liquibase.change.core.RawSQLChange;
+import liquibase.change.core.UpdateDataChange;
 import liquibase.change.custom.CustomChangeWrapper;
 import liquibase.change.custom.ExampleCustomSqlChange;
 import liquibase.changelog.ChangeSet;
@@ -334,6 +336,22 @@ public class XMLChangeLogSAXParserTest {
         Change change = changeSet.getChanges().get(0);
         assertEquals("createTable", change.getChangeMetaData().getName());
         assertTrue(change instanceof CreateTableChange);
+    }
+    
+    @Test
+    public void fileContentColumnChangeLog() throws Exception {
+        DatabaseChangeLog changeLog = new XMLChangeLogSAXParser().parse("liquibase/parser/core/xml/fileContentColumnChangeLog.xml", new ChangeLogParameters(), new JUnitResourceAccessor());
+
+        assertEquals(1, changeLog.getChangeSets().size());
+
+        ChangeSet changeSet = changeLog.getChangeSets().get(0);
+        UpdateDataChange  change = (UpdateDataChange) changeSet.getChanges().get(0);
+        
+        ColumnConfig columnWithFileValue = change.getColumns().get(0);
+        
+        Object fileContent = columnWithFileValue.getValueObject();
+        
+        assertEquals("Some text content", fileContent);
     }
 
 	@Test

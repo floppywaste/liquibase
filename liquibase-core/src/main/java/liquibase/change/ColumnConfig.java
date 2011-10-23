@@ -35,6 +35,7 @@ public class ColumnConfig {
     private BigInteger startWith;
     private BigInteger incrementBy;
     private String remarks;
+	private String valueFileContent;
     
     
     public ColumnConfig(Column columnStructure) {
@@ -200,12 +201,16 @@ public class ColumnConfig {
             return getValueDate();
         } else if (getValueComputed() != null) {
             return getValueComputed();
+        } else if (getValueFileContent() != null) {
+        	return getValueFileContent();
         }
         return null;
     }
 
 
-    public String getDefaultValue() {
+  
+
+	public String getDefaultValue() {
         return defaultValue;
     }
 
@@ -315,6 +320,14 @@ public class ColumnConfig {
 
         return this;
     }
+    
+    public void setFileValue(FileValueConfig fileValueConfig) {
+    	valueFileContent = fileValueConfig.getFileContent();
+	}
+    
+    private String getValueFileContent() {
+  		return valueFileContent;
+  	}
 
     public Boolean isAutoIncrement() {
         return autoIncrement;
@@ -370,4 +383,6 @@ public class ColumnConfig {
         this.remarks = remarks;
         return this;
     }
+
+	
 }

@@ -57,6 +57,13 @@ public interface Change {
      * finding for files that are provided by the user.
      */
     public void setResourceAccessor(ResourceAccessor resourceAccessor);
+    
+    /**
+     * Returns the FileOpen as provided by the creating ChangeLog.
+     *
+     * @return The file opener
+     */
+    public ResourceAccessor getResourceAccessor();
 
 
     /**

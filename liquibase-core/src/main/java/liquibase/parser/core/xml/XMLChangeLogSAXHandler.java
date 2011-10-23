@@ -7,17 +7,29 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLDecoder;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.Stack;
+import java.util.TreeSet;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import liquibase.change.AbstractChange;
 import liquibase.change.Change;
 import liquibase.change.ChangeFactory;
 import liquibase.change.ChangeWithColumns;
 import liquibase.change.ColumnConfig;
 import liquibase.change.ConstraintsConfig;
+import liquibase.change.FileValueConfig;
 import liquibase.change.core.CreateProcedureChange;
 import liquibase.change.core.CreateViewChange;
 import liquibase.change.core.DeleteDataChange;
@@ -375,20 +387,24 @@ class XMLChangeLogSAXHandler extends DefaultHandler {
 					String attributeValue = atts.getValue(i);
 					setProperty(constraints, attributeName, attributeValue);
 				}
-				ColumnConfig lastColumn = null;
-                if (change instanceof ChangeWithColumns) {
-                    List<ColumnConfig> columns = ((ChangeWithColumns) change).getColumns();
-                    if (columns != null && columns.size() > 0) {
-                        lastColumn = columns.get(columns.size() - 1);
-                    }
-                } else {
-					throw new RuntimeException("Unexpected change: "
-							+ change.getClass().getName());
-				}
+				ColumnConfig lastColumn = determineLastColumn();
                 if (lastColumn == null) {
                     throw new RuntimeException("Could not determine column to add constraint to");
                 }
 				lastColumn.setConstraints(constraints);
+			} else if (change != null && "fileValue".equals(qName)) {
+				
+				FileValueConfig fileValue = new FileValueConfig(change.getResourceAccessor());
+				for (int i = 0; i < atts.getLength(); i++) {
+					String attributeName = atts.getQName(i);
+					String attributeValue = atts.getValue(i);
+					setProperty(fileValue, attributeName, attributeValue);
+				}
+				ColumnConfig lastColumn = determineLastColumn();
+                if (lastColumn == null) {
+                    throw new RuntimeException("Could not determine column to add fileValue to");
+                }
+				lastColumn.setFileValue(fileValue);
 			} else if ("param".equals(qName)) {
 				if (change instanceof CustomChangeWrapper) {
 					if (atts.getValue("value") == null) {
@@ -465,6 +481,20 @@ class XMLChangeLogSAXHandler extends DefaultHandler {
 			e.printStackTrace();
 			throw new SAXException(e);
 		}
+	}
+
+	private ColumnConfig determineLastColumn() {
+		ColumnConfig lastColumn = null;
+		if (change instanceof ChangeWithColumns) {
+		    List<ColumnConfig> columns = ((ChangeWithColumns) change).getColumns();
+		    if (columns != null && columns.size() > 0) {
+		        lastColumn = columns.get(columns.size() - 1);
+		    }
+		} else {
+			throw new RuntimeException("Unexpected change: "
+					+ change.getClass().getName());
+		}
+		return lastColumn;
 	}
 
 	protected boolean handleIncludedChangeLog(String fileName,
