@@ -1,11 +1,7 @@
 package liquibase.change;
 
-import java.io.IOException;
-import java.io.InputStream;
-
-import liquibase.exception.UnexpectedLiquibaseException;
 import liquibase.resource.ResourceAccessor;
-import liquibase.util.StreamUtil;
+import liquibase.resource.ResourceContentToString;
 
 /**
  * This class is the representation of the fileValue tag in the XMl file It is
@@ -39,38 +35,15 @@ public class FileValueConfig {
 		this.encoding = encoding;
 	}
 
+	/**
+	 * Reads the content from a resource specified by {@link #setPath(String)}.
+	 * Uses the charset specified by {@link #setEncoding(String)} or the system
+	 * default if none was specified.
+	 * 
+	 * @return
+	 */
 	public String getFileContent() {
-		InputStream stream = null;
-		final String fileContent;
-		try {
-			stream = resourceAccessor.getResourceAsStream(path);
-			validatePath(stream);
-			fileContent = StreamUtil.getStreamContents(stream, encoding);
-		} catch (IOException e) {
-			throw new UnexpectedLiquibaseException(String.format(
-					"Could not read file %s", path), e);
-		} finally {
-			tryClosingStream(stream);
-		}
-		return fileContent;
-	}
-
-	private void tryClosingStream(InputStream stream) {
-		if (stream != null) {
-			try {
-				stream.close();
-			} catch (IOException e) {
-				throw new UnexpectedLiquibaseException(String.format(
-						"Could not close stream %s", path), e);
-			}
-		}
-	}
-
-	private void validatePath(InputStream stream) {
-		if (stream == null) {
-			throw new UnexpectedLiquibaseException(String.format(
-					"Path %s could not be resolved", path));
-		}
+		return new ResourceContentToString(resourceAccessor).getFileContent(path, encoding); 
 	}
 
 }

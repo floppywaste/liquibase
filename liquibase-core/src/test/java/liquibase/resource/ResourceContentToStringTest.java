@@ -1,4 +1,4 @@
-package liquibase.change;
+package liquibase.resource;
 
 import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.expect;
@@ -15,20 +15,12 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
 import liquibase.exception.UnexpectedLiquibaseException;
-import liquibase.resource.ResourceAccessor;
-import liquibase.resource.ResourceContentToString;
 
 import org.junit.Before;
 import org.junit.Test;
 
-/**
- * Tests {@link FileValueConfig}.
- * 
- * These tests have become redundant since the actual logic has been extracted and moved
- * to {@link ResourceContentToString}.
- */
-public class FileValueConfigTest {
-
+public class ResourceContentToStringTest {
+	
 	private static final String UTF_8 = "UTF-8";
 	private static final String ISO_8859_1 = "ISO-8859-1";
 
@@ -48,79 +40,66 @@ public class FileValueConfigTest {
 	public void getFileContent_fileNotFound_throwsException() throws Exception {
 		expect(resourceAccessor.getResourceAsStream(FILE_PATH)).andReturn(null);
 		replay(resourceAccessor);
-		FileValueConfig fileValueConfig = createFileValueConfig(FILE_PATH, UTF_8);
 
-		fileValueConfig.getFileContent();
+		new ResourceContentToString(resourceAccessor).getFileContent(FILE_PATH, UTF_8);
 	}
 
 	@Test
-	public void getFileContent_fileContentExists_returnsFileContent() throws Exception {
+	public void getFileContent_fileContentExists_returnsFileContent()
+			throws Exception {
 		mockResourceAccessor(TEXT.getBytes());
 
-		FileValueConfig fileValueConfig = createFileValueConfig(FILE_PATH, UTF_8);
-
-		String content = fileValueConfig.getFileContent();
+		String content = new ResourceContentToString(resourceAccessor).getFileContent(FILE_PATH, UTF_8);
 
 		assertEquals(TEXT, content);
 		verify(resourceAccessor);
 	}
-
+	
 	@Test
-	public void getFileContent_specialEncoding_returnsFileContentEncodedCorrectly() throws Exception {
-
+	public void getFileContent_specialEncoding_returnsFileContentEncodedCorrectly()
+			throws Exception {
 		Charset charset = Charset.forName(ISO_8859_1);
 		ByteBuffer germanUmlauts = charset.encode(GERMAN_UMLAUTS);
 		mockResourceAccessor(germanUmlauts.array());
 
-		FileValueConfig fileValueConfig = createFileValueConfig(FILE_PATH, ISO_8859_1);
-
-		String content = fileValueConfig.getFileContent();
+		String content = new ResourceContentToString(resourceAccessor).getFileContent(FILE_PATH, ISO_8859_1);
 
 		assertEquals(GERMAN_UMLAUTS, content);
 		verify(resourceAccessor);
 	}
-
+	
 	@Test
-	public void getFileContent_wrongEncoding_returnsFileContentEncodedIncorrectly() throws Exception {
-
+	public void getFileContent_wrongEncoding_returnsFileContentEncodedIncorrectly()
+			throws Exception {
 		Charset charset = Charset.forName(ISO_8859_1);
 		ByteBuffer germanUmlauts = charset.encode(GERMAN_UMLAUTS);
 		mockResourceAccessor(germanUmlauts.array());
 
-		FileValueConfig fileValueConfig = createFileValueConfig(FILE_PATH, UTF_8);
-
-		String content = fileValueConfig.getFileContent();
+		String content =  new ResourceContentToString(resourceAccessor).getFileContent(FILE_PATH, UTF_8);
 
 		assertFalse(GERMAN_UMLAUTS.equals(content));
 		verify(resourceAccessor);
 	}
-
+	
 	@Test
-	public void getFileContent_noCharsetSpecified_usesDefaultCharset() throws Exception {
-
+	public void getFileContent_noCharsetSpecified_usesDefaultCharset()
+			throws Exception {
+		
 		Charset charset = Charset.defaultCharset();
 		ByteBuffer germanUmlauts = charset.encode(GERMAN_UMLAUTS);
 		mockResourceAccessor(germanUmlauts.array());
 
-		FileValueConfig fileValueConfig = createFileValueConfig(FILE_PATH, null);
+		String content = new ResourceContentToString(resourceAccessor).getFileContent(FILE_PATH,null);
 
-		String content = fileValueConfig.getFileContent();
-
-		assertTrue(((String) content).contains(GERMAN_UMLAUTS));
+		assertTrue(((String)content).contains(GERMAN_UMLAUTS));
 		verify(resourceAccessor);
 	}
 
 	private void mockResourceAccessor(byte[] characterBytes) throws IOException {
 		InputStream inputStream = new ByteArrayInputStream(characterBytes);
-		expect(resourceAccessor.getResourceAsStream(FILE_PATH)).andReturn(inputStream);
+		expect(resourceAccessor.getResourceAsStream(FILE_PATH)).andReturn(
+				inputStream);
 		replay(resourceAccessor);
-	}
-
-	private FileValueConfig createFileValueConfig(String filePath, String encoding) {
-		FileValueConfig fileValueConfig = new FileValueConfig(resourceAccessor);
-		fileValueConfig.setPath(filePath);
-		fileValueConfig.setEncoding(encoding);
-		return fileValueConfig;
 	}
 
 }
