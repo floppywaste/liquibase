@@ -3,10 +3,9 @@ package liquibase.change;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.apache.commons.io.IOUtils;
-
 import liquibase.exception.UnexpectedLiquibaseException;
 import liquibase.resource.ResourceAccessor;
+import liquibase.util.StreamUtil;
 
 /**
  * This class is the representation of the fileValue tag in the XMl file It is
@@ -46,14 +45,25 @@ public class FileValueConfig {
 		try {
 			stream = resourceAccessor.getResourceAsStream(path);
 			validatePath(stream);
-			fileContent = IOUtils.toString(stream, encoding);
+			fileContent = StreamUtil.getStreamContents(stream, encoding);
 		} catch (IOException e) {
 			throw new UnexpectedLiquibaseException(String.format(
 					"Could not read file %s", path), e);
 		} finally {
-			IOUtils.closeQuietly(stream);
+			tryClosingStream(stream);
 		}
 		return fileContent;
+	}
+
+	private void tryClosingStream(InputStream stream) {
+		if (stream != null) {
+			try {
+				stream.close();
+			} catch (IOException e) {
+				throw new UnexpectedLiquibaseException(String.format(
+						"Could not close stream %s", path), e);
+			}
+		}
 	}
 
 	private void validatePath(InputStream stream) {
